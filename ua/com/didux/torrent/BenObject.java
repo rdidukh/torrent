@@ -1,6 +1,8 @@
 package ua.com.didux.torrent;
 
 import java.io.ByteArrayInputStream;
+import java.util.List;
+import java.util.LinkedList;
 
 abstract public class BenObject
 {
@@ -20,6 +22,18 @@ abstract public class BenObject
         type = t;
     }
 
+    protected static BenObject getBenObject(ByteArrayInputStream input, char ch)
+    {
+        if(ch == 'i')
+            return new BenInteger(input);
+        else if(ch >= '0' && ch <= '9')
+            return new BenString(input, ch);
+        else if(ch == 'l')
+            return new BenList(input);    
+
+        throw new IllegalArgumentException("[ 1 ]");
+    }
+
     public static BenObject getBenObject(ByteArrayInputStream input)
     {
         if(input.available() < 1) 
@@ -27,12 +41,7 @@ abstract public class BenObject
 
         char ch = (char)input.read();
 
-        if(ch == 'i')
-            return new BenInteger(input);
-        else if(ch >= '0' && ch <= '9')
-            return new BenString(input, ch);
-
-        throw new IllegalArgumentException("[ 2 ]");
+        return getBenObject(input, ch);
     }
 
     public Type getType()
@@ -152,3 +161,49 @@ class BenString extends BenObject
         System.out.println("STRING("+value.length()+ "): \'"+value+"\'");
     }
 }
+
+
+class BenList extends BenObject
+{
+    List<BenObject> list = new LinkedList<BenObject>();
+
+    private void parse(ByteArrayInputStream input)
+    {
+        char ch = 'l';
+
+        if(input.available() < 1) 
+            throw new IllegalArgumentException("[ 1 ]");
+
+        while(input.available() > 0)
+        {
+            ch = (char)input.read();
+
+            if(ch == 'e') break;
+
+            list.add(BenObject.getBenObject(input, ch));
+        }
+
+        if(ch != 'e') 
+            throw new IllegalArgumentException("[ 3 ]");   
+    }
+
+    public BenList(ByteArrayInputStream input)
+    {
+        super(Type.LIST);
+        parse(input);
+    }
+        
+    public void print(int tab)
+    {
+        for(int i = 0; i < tab; i++)
+            System.out.print(' ');
+    
+        System.out.println("LIST(" + list.size() + "): ");
+        
+        for(BenObject element : list)
+        {
+            element.print(tab+2);
+        }
+    }
+}
+
