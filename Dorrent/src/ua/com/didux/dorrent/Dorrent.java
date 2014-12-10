@@ -26,7 +26,8 @@ public class Dorrent extends JFrame implements ActionListener
         textField = new JTextField();
         textField.setBounds(50, 150, 300, 30);
         this.add(textField);
-        
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
     }
     
