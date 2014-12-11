@@ -1,8 +1,11 @@
 package ua.com.didux.dorrent;
 
 import java.io.ByteArrayInputStream;
-import java.util.List;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 abstract public class BenObject
 {
@@ -30,7 +33,9 @@ abstract public class BenObject
             return new BenString(input, ch);
         else if(ch == 'l')
             return new BenList(input);    
-
+        else if(ch == 'd')
+            return new BenDictionary(input);
+        
         throw new IllegalArgumentException("[ 1 ]");
     }
 
@@ -44,6 +49,11 @@ abstract public class BenObject
         return getBenObject(input, ch);
     }
 
+    public Object getValue() 
+    {
+        throw new UnsupportedOperationException("Not supported yet."); 
+    }
+    
     public Type getType()
     {
         return type;
@@ -83,7 +93,8 @@ class BenInteger extends BenObject
             throw new IllegalArgumentException("[ 3 ]");   
     }
 
-    public int getValue()
+    @Override
+    public Integer getValue()
     {
         return value;
     }
@@ -94,6 +105,7 @@ class BenInteger extends BenObject
         parse(input);
     }
         
+    @Override
     public void print(int tab)
     {
         for(int i = 0; i < tab; i++)
@@ -142,6 +154,7 @@ class BenString extends BenObject
         value = new String(bytes);        
     }
 
+    @Override
     public String getValue()
     {
         return value;
@@ -153,6 +166,7 @@ class BenString extends BenObject
         parse(input, firstChar);
     }
         
+    @Override
     public void print(int tab)
     {
         for(int i = 0; i < tab; i++)
@@ -162,10 +176,9 @@ class BenString extends BenObject
     }
 }
 
-
 class BenList extends BenObject
 {
-    List<BenObject> list = new LinkedList<BenObject>();
+    List<BenObject> list = new LinkedList<>();
 
     private void parse(ByteArrayInputStream input)
     {
@@ -189,10 +202,11 @@ class BenList extends BenObject
 
     public BenList(ByteArrayInputStream input)
     {
-        super(Type.LIST);
+        super(BenObject.Type.LIST);
         parse(input);
     }
         
+    @Override
     public void print(int tab)
     {
         for(int i = 0; i < tab; i++)
@@ -205,5 +219,70 @@ class BenList extends BenObject
             element.print(tab+2);
         }
     }
+
 }
 
+
+class BenDictionary extends BenObject
+{
+    List<BenObject> keys = new ArrayList<>();
+    List<BenObject> values = new ArrayList<>();
+    Map<String, BenObject> strings = new HashMap<>();
+    
+    private void parse(ByteArrayInputStream input)
+    {
+        char ch = 'd';
+
+        if(input.available() < 1) 
+            throw new IllegalArgumentException("[ 1 ]");
+
+        while(input.available() > 0)
+        {
+            ch = (char)input.read();
+
+            if(ch == 'e') break;
+
+            BenObject key = BenObject.getBenObject(input, ch);
+            
+            if(key.getType() != BenObject.Type.STRING)
+                throw new IllegalArgumentException("[ 2 ]");
+            
+            if(input.available() <= 0)
+                throw new IllegalArgumentException("[ 3 ]");
+                
+            ch = (char)input.read();
+            
+            BenObject value = BenObject.getBenObject(input, ch);
+            
+            keys.add(key);
+            values.add(value);
+            strings.put((String)key.getValue(), value);
+        }
+
+        if(ch != 'e') 
+            throw new IllegalArgumentException("[ 4 ]");   
+    }
+
+    
+    public BenDictionary(ByteArrayInputStream input)
+    {
+        super(BenObject.Type.DICTIONARY);
+        parse(input);
+    }
+    
+    
+    @Override
+    public void print(int tab)
+    {
+        for(int i = 0; i < tab; i++)
+            System.out.print(' ');
+    
+        System.out.println("DICTIONARY(" + keys.size() + "): ");
+        
+        for(int i = 0; i < keys.size(); i++)
+        {
+            keys.get(i).print(tab+2);
+            values.get(i).print(tab+2);
+        }
+    }
+}
