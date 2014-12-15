@@ -1,6 +1,7 @@
 package ua.com.didux.dorrent;
 
-import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -25,27 +26,38 @@ abstract public class BenObject
         type = t;
     }
 
-    protected static BenObject getBenObject(ByteArrayInputStream input, char ch)
+    protected static BenObject getBenObject(InputStream input, char ch)
     {
-        if(ch == 'i')
-            return new BenInteger(input);
-        else if(ch >= '0' && ch <= '9')
-            return new BenString(input, ch);
-        else if(ch == 'l')
-            return new BenList(input);    
-        else if(ch == 'd')
-            return new BenDictionary(input);
+        try
+        {
         
-        throw new IllegalArgumentException("[ 1 ]");
+            if(ch == 'i')
+                return new BenInteger(input);
+            else if(ch >= '0' && ch <= '9')
+                return new BenString(input, ch);
+            else if(ch == 'l')
+                return new BenList(input);    
+            else if(ch == 'd')
+                return new BenDictionary(input);
+        
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+            throw new IllegalArgumentException("[ 1 ]");
+        }
+        
+        throw new IllegalArgumentException("[ 2 ]");
     }
 
-    public static BenObject getBenObject(ByteArrayInputStream input)
+    public static BenObject getBenObject(InputStream input) throws IOException
     {
         if(input.available() < 1) 
             throw new IllegalArgumentException("[ 1 ]");
 
         char ch = (char)input.read();
 
+        
         return getBenObject(input, ch);
     }
 
@@ -67,7 +79,7 @@ class BenInteger extends BenObject
 {
     int value;
 
-    private void parse(ByteArrayInputStream input)
+    private void parse(InputStream input) throws IOException
     {
         char ch = 'i';
 
@@ -99,7 +111,7 @@ class BenInteger extends BenObject
         return value;
     }
 
-    public BenInteger(ByteArrayInputStream input)
+    public BenInteger(InputStream input) throws IOException
     {
         super(Type.INTEGER);
         parse(input);
@@ -120,7 +132,7 @@ class BenString extends BenObject
 {
     String value;
 
-    private void parse(ByteArrayInputStream input, char firstChar)
+    private void parse(InputStream input, char firstChar) throws IOException
     {
         if(firstChar < '0' || firstChar > '9')
             throw new IllegalArgumentException("[ 1 ]");
@@ -160,7 +172,7 @@ class BenString extends BenObject
         return value;
     }
 
-    public BenString(ByteArrayInputStream input, char firstChar)
+    public BenString(InputStream input, char firstChar) throws IOException
     {
         super(Type.STRING);
         parse(input, firstChar);
@@ -178,9 +190,9 @@ class BenString extends BenObject
 
 class BenList extends BenObject
 {
-    List<BenObject> list = new LinkedList<>();
+    List<BenObject> list = new LinkedList<BenObject>();
 
-    private void parse(ByteArrayInputStream input)
+    private void parse(InputStream input) throws IOException
     {
         char ch = 'l';
 
@@ -200,7 +212,7 @@ class BenList extends BenObject
             throw new IllegalArgumentException("[ 3 ]");   
     }
 
-    public BenList(ByteArrayInputStream input)
+    public BenList(InputStream input) throws IOException
     {
         super(BenObject.Type.LIST);
         parse(input);
@@ -225,11 +237,11 @@ class BenList extends BenObject
 
 class BenDictionary extends BenObject
 {
-    List<BenObject> keys = new ArrayList<>();
-    List<BenObject> values = new ArrayList<>();
-    Map<String, BenObject> strings = new HashMap<>();
+    List<BenObject> keys = new ArrayList<BenObject>();
+    List<BenObject> values = new ArrayList<BenObject>();
+    Map<String, BenObject> strings = new HashMap<String, BenObject>();
     
-    private void parse(ByteArrayInputStream input)
+    private void parse(InputStream input) throws IOException
     {
         char ch = 'd';
 
@@ -264,7 +276,7 @@ class BenDictionary extends BenObject
     }
 
     
-    public BenDictionary(ByteArrayInputStream input)
+    public BenDictionary(InputStream input) throws IOException
     {
         super(BenObject.Type.DICTIONARY);
         parse(input);

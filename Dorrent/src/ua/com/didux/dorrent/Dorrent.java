@@ -3,8 +3,11 @@ package ua.com.didux.dorrent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
 public class Dorrent extends JFrame implements ActionListener
@@ -49,11 +52,23 @@ public class Dorrent extends JFrame implements ActionListener
     @Override
     public void actionPerformed(ActionEvent e) 
     {
-        if(e.getSource() == okButton)
+        try
         {
-            byte[] bytes = textField.getText().getBytes();
-            BenObject bo = BenObject.getBenObject(new ByteArrayInputStream(bytes));
-            bo.print(0);
+            if(e.getSource() == okButton)
+            {
+                byte[] bytes = textField.getText().getBytes();
+                BenObject bo = BenObject.getBenObject(new ByteArrayInputStream(bytes));
+                bo.print(0);
+            }
+        
+        }
+        catch(Exception ex)
+        {
+            
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            ex.printStackTrace(pw);
+            JOptionPane.showMessageDialog(this, sw.toString()); // stack trace as a string
         }
     }
 }
