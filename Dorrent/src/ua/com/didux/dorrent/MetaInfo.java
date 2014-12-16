@@ -6,6 +6,8 @@ package ua.com.didux.dorrent;
 
 import java.io.InvalidClassException;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 class MetaInfoException extends Exception
@@ -29,9 +31,26 @@ public class MetaInfo
     
     public class File
     {
-        String path;
-        byte[] md5Sum;
-        int lenght;
+        private String name;
+        private List<String> path;
+        private byte[] md5Sum;
+        private int length;
+        
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+        
+        public String getName()
+        {
+            return name;
+        }
+        
+        public int getLength()
+        {
+            return length;
+        }
+        
     }
     
     public MetaInfo(BenDictionary bd)
@@ -49,7 +68,7 @@ public class MetaInfo
         if(!(benObj instanceof BenString))
             throw new MetaInfoException("\'announce\' is not BenString.");
         
-        return ((BenString)benObj).getValue();
+        return new String(((BenString)benObj).getValue());
     }
    
     
@@ -75,7 +94,20 @@ public class MetaInfo
         if(!(benObj instanceof BenInteger))
             throw new MetaInfoException("\'piece length\' is not BenInteger.");
         
-        return ((BenInteger)benObj).getValue().intValue();        
+        return ((BenInteger)benObj).getInt();        
+    }
+    
+    public int getLength() throws MetaInfoException
+    {
+        BenObject benObj = getInfo().get("length");
+        
+        if(benObj == null)
+            throw new MetaInfoException("\'info.length\' not found.");
+        
+        if(!(benObj instanceof BenInteger))
+            throw new MetaInfoException("\'info.length\' is not BenInteger.");
+        
+        return ((BenInteger)benObj).getInt();        
     }
     
     public String getName() throws MetaInfoException
@@ -88,7 +120,94 @@ public class MetaInfo
         if(!(benObj instanceof BenString))
             throw new MetaInfoException("\'info.name\' is not BenString.");
         
-        return ((BenString)benObj).getValue();        
+        return new String(((BenString)benObj).getValue());        
+    }
+    
+    public byte[] getPieces() throws MetaInfoException
+    {
+        BenObject benObj = getInfo().get("pieces");
+        
+        if(benObj == null)
+            throw new MetaInfoException("\'info.pieces\' not found.");
+        
+        if(!(benObj instanceof BenString))
+            throw new MetaInfoException("\'info.pieces\' is not BenString.");
+        
+        return ((BenString)benObj).getValue();
+    }
+    
+    public List<File> getFileList() throws MetaInfoException
+    {
+        BenDictionary info = getInfo();
+        List<File> files = new ArrayList<File>();
+        
+        BenObject fileList = info.get("files");
+        
+        if(fileList == null)
+        {
+            // Single file mode
+            File file = new File();
+            file.name = getName();
+            file.length = getLength();
+            file.path = new LinkedList<String>();
+            files.add(file);
+            return files;
+        }
+        
+        if(!(fileList instanceof BenList))
+            throw new MetaInfoException("\'info.files\' is not BenList.");
+        
+        List<BenObject> benList = ((BenList)fileList).getList();
+        
+        for(BenObject benObj: benList)
+        {
+            if(!(benObj instanceof BenDictionary))
+                throw new MetaInfoException("files entry is not BenDictionary");
+            
+            BenDictionary bd = (BenDictionary)benObj;
+            
+            BenObject benLength = bd.get("length");
+            
+            if(benLength == null)
+                throw new MetaInfoException("files entry does not hold length field");
+            
+            if(!(benLength instanceof BenInteger))
+                throw new MetaInfoException("files entry length is not BenInteger");
+            
+            int length = ((BenInteger)benLength).getInt();
+            
+            BenObject benPath = bd.get("path");
+            
+            if(benPath == null)
+                throw new MetaInfoException("files entry does not hold path field");
+            
+            if(!(benPath instanceof BenList))
+                throw new MetaInfoException("files entry path is not BenList");
+            
+            List<BenObject> benPathList = ((BenList)benPath).getList();
+            
+            LinkedList<String> path = new LinkedList<String>();
+            
+            for(BenObject benPathEntry: benPathList)
+            {
+                if(!(benPathEntry instanceof BenString))
+                    throw new MetaInfoException("files entry path entry is not BenString");
+            
+                path.add(((BenString)benPathEntry).toString());
+            }
+            
+            
+            
+            File file = new File();
+            file.name = path.removeLast();
+            file.length = length;
+            file.path = path;
+            
+            files.add(file);
+        }
+        
+        
+        return files;
     }
     
 //    public List<File> getFileList()
@@ -98,6 +217,11 @@ public class MetaInfo
 //    
 //    }
     
+    public boolean isSingleFileMode() throws MetaInfoException
+    {
+        return getInfo().get("files") == null;
+    }
+    
     @Override
     public String toString()
     {
@@ -106,8 +230,18 @@ public class MetaInfo
         try
         {
             sw.write("name: "+getName()+"\n");
+            if(this.isSingleFileMode())
+                sw.write("length: "+getLength()+"\n");
             sw.write("announce: " + getAnnounce() + "\n");
             sw.write("piece length: " + getPieceLength() + "\n");
+            
+            List<File> files = getFileList();
+            
+            for(File file: files)
+            {
+                sw.write("file: "+file.getName()+"\n");
+            }
+            
         }
         catch(MetaInfoException ex)
         {

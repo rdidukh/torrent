@@ -24,6 +24,8 @@ public class Dorrent extends JFrame implements ActionListener
     JMenuBar menuBar;
     JMenu fileMenu;
     JMenuItem openFileMenuItem;
+    JMenuItem exitFileMenuItem;
+    JFileChooser fileChooser;
     
     Dorrent()
     {
@@ -51,8 +53,14 @@ public class Dorrent extends JFrame implements ActionListener
 
         openFileMenuItem = new JMenuItem("Open");
         openFileMenuItem.addActionListener(this);
+        
+        exitFileMenuItem = new JMenuItem("Exit");
+        exitFileMenuItem.addActionListener(this);        
+        
         fileMenu.add(openFileMenuItem);
-
+        fileMenu.addSeparator();
+        fileMenu.add(exitFileMenuItem);
+        
         menuBar.add(fileMenu);
         
         this.setJMenuBar(menuBar);
@@ -76,20 +84,26 @@ public class Dorrent extends JFrame implements ActionListener
             if(e.getSource() == openFileMenuItem)
             {
                 
-                JFileChooser chooser = new JFileChooser();
+                if(fileChooser == null)
+                    fileChooser = new JFileChooser();
                 FileNameExtensionFilter filter = new FileNameExtensionFilter("BitTorrent files", "torrent");
-                chooser.setFileFilter(filter);
-                int returnVal = chooser.showOpenDialog(this);
+                fileChooser.setFileFilter(filter);
+                int returnVal = fileChooser.showOpenDialog(this);
                 if (returnVal != JFileChooser.APPROVE_OPTION) 
                     return;
                 
-                BenObject benObj = BenObject.getBenObject(new FileInputStream(chooser.getSelectedFile().getPath()));
+                BenObject benObj = BenObject.getBenObject(new FileInputStream(fileChooser.getSelectedFile().getPath()));
                 benObj.print(0);
                 MetaInfo metaInfo = new MetaInfo((BenDictionary)benObj);
                 
                 JOptionPane.showMessageDialog(this, metaInfo.toString());  
             }
-        
+            else if(e.getSource() == exitFileMenuItem)
+            {
+                setVisible(false);
+                dispose();
+            }
+            
         }
         catch(Exception ex)
         {

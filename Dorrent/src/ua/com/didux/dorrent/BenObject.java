@@ -60,11 +60,6 @@ abstract public class BenObject
         
         return getBenObject(input, ch);
     }
-
-    public Object getValue() 
-    {
-        throw new UnsupportedOperationException("Not supported yet."); 
-    }
     
     public Type getType()
     {
@@ -127,8 +122,7 @@ class BenInteger extends BenObject
         value *= sign;
     }
 
-    @Override
-    public Integer getValue()
+    public int getInt()
     {
         return value;
     }
@@ -152,7 +146,7 @@ class BenInteger extends BenObject
 
 class BenString extends BenObject
 {
-    private String value;
+    private byte[] value;
 
     private void parse(InputStream input, char firstChar) throws IOException
     {
@@ -181,19 +175,22 @@ class BenString extends BenObject
         if(input.available() < length)
             throw new IllegalArgumentException("[ 4 ]"); 
 
-        byte[] bytes = new byte[length];
-                
-        input.read(bytes, 0, length);
-
-        value = new String(bytes);        
+        value = new byte[length];
+        
+        input.read(value, 0, length);        
     }
 
-    @Override
-    public String getValue()
+    public byte[] getValue()
     {
         return value;
     }
 
+    @Override
+    public String toString()
+    {
+        return new String(value);
+    }
+    
     public BenString(InputStream input, char firstChar) throws IOException
     {
         super(Type.STRING);
@@ -206,7 +203,7 @@ class BenString extends BenObject
         for(int i = 0; i < tab; i++)
             System.out.print(' ');
     
-        System.out.println("STRING("+value.length()+ "): \'"+value+"\'");
+        System.out.println("STRING("+value.length+ "): \'"+new String(value)+"\'");
     }
 }
 
@@ -240,6 +237,11 @@ class BenList extends BenObject
         parse(input);
     }
         
+    public List<BenObject> getList()
+    {
+        return list;
+    }
+    
     @Override
     public void print(int tab)
     {
@@ -290,10 +292,7 @@ class BenDictionary extends BenObject
             
             keys.add(key);
             values.add(value);
-            strings.put((String)key.getValue(), value);
-            
-            System.out.println("==> " + (String)key.getValue());
-            
+            strings.put(new String(((BenString)key).getValue()), value); 
         }
 
         if(ch != 'e') 
