@@ -77,7 +77,7 @@ abstract public class BenObject
 
 class BenInteger extends BenObject
 {
-    int value;
+    private int value;
 
     private void parse(InputStream input) throws IOException
     {
@@ -88,6 +88,26 @@ class BenInteger extends BenObject
 
         value = 0;
 
+        int sign = 1;
+        
+        if(input.available() < 1) 
+            throw new IllegalArgumentException("[ 2 ]");
+        
+        ch = (char)input.read();
+        
+        if(ch == '-')
+        {
+            sign = -1;
+        }
+        else if(ch >= '0' && ch <= '9')
+        {
+            value = ch-'0';
+        }
+        else
+        {
+            throw new IllegalArgumentException("[ 3 ]");
+        }
+        
         while(input.available() > 0)
         {
             ch = (char)input.read();
@@ -95,14 +115,16 @@ class BenInteger extends BenObject
             if(ch == 'e') break;
 
             if(ch < '0' || ch > '9')
-                throw new IllegalArgumentException("[ 2 ]");                
+                throw new IllegalArgumentException("[ 4 ]");                
             
             value *= 10;
             value += ch-'0';
         }
 
         if(ch != 'e') 
-            throw new IllegalArgumentException("[ 3 ]");   
+            throw new IllegalArgumentException("[ 5 ]");   
+        
+        value *= sign;
     }
 
     @Override
@@ -130,7 +152,7 @@ class BenInteger extends BenObject
 
 class BenString extends BenObject
 {
-    String value;
+    private String value;
 
     private void parse(InputStream input, char firstChar) throws IOException
     {
@@ -190,7 +212,7 @@ class BenString extends BenObject
 
 class BenList extends BenObject
 {
-    List<BenObject> list = new LinkedList<BenObject>();
+    private List<BenObject> list = new LinkedList<BenObject>();
 
     private void parse(InputStream input) throws IOException
     {
@@ -237,9 +259,9 @@ class BenList extends BenObject
 
 class BenDictionary extends BenObject
 {
-    List<BenObject> keys = new ArrayList<BenObject>();
-    List<BenObject> values = new ArrayList<BenObject>();
-    Map<String, BenObject> strings = new HashMap<String, BenObject>();
+    private List<BenObject> keys = new ArrayList<BenObject>();
+    private List<BenObject> values = new ArrayList<BenObject>();
+    private Map<String, BenObject> strings = new HashMap<String, BenObject>();
     
     private void parse(InputStream input) throws IOException
     {
@@ -269,6 +291,9 @@ class BenDictionary extends BenObject
             keys.add(key);
             values.add(value);
             strings.put((String)key.getValue(), value);
+            
+            System.out.println("==> " + (String)key.getValue());
+            
         }
 
         if(ch != 'e') 
@@ -282,6 +307,10 @@ class BenDictionary extends BenObject
         parse(input);
     }
     
+    public BenObject get(String key)
+    {
+        return strings.get(key);
+    }
     
     @Override
     public void print(int tab)

@@ -3,17 +3,27 @@ package ua.com.didux.dorrent;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Dorrent extends JFrame implements ActionListener
 {
-    JButton okButton;
-    JTextField textField;
+   // JButton okButton;
+   // JButton openButton;
+   // JTextField textField;
+    JMenuBar menuBar;
+    JMenu fileMenu;
+    JMenuItem openFileMenuItem;
     
     Dorrent()
     {
@@ -21,26 +31,34 @@ public class Dorrent extends JFrame implements ActionListener
         this.setSize(600, 600);
         this.setLayout(null);
         
-        okButton = new JButton("OK");
-        okButton.setBounds(50, 50, 100, 30);
-        okButton.addActionListener(this);
-        this.add(okButton);
-        
-        textField = new JTextField();
-        textField.setBounds(50, 150, 300, 30);
-        this.add(textField);
+//        okButton = new JButton("OK");
+//        okButton.setBounds(50, 150, 100, 30);
+//        okButton.addActionListener(this);
+//        this.add(okButton);
+//        
+//        openButton = new JButton("Open");
+//        openButton.setBounds(450, 50, 100, 30);
+//        openButton.addActionListener(this);
+//        this.add(openButton);
+//        
+//        textField = new JTextField();
+//        textField.setBounds(50, 50, 300, 30);
+//        this.add(textField);
 
+
+        menuBar = new JMenuBar();
+        fileMenu = new  JMenu("File");
+
+        openFileMenuItem = new JMenuItem("Open");
+        openFileMenuItem.addActionListener(this);
+        fileMenu.add(openFileMenuItem);
+
+        menuBar.add(fileMenu);
+        
+        this.setJMenuBar(menuBar);
+        
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setVisible(true);
-    }
-    
-    void run()
-    {
-        // byte[] bytes = args[0].getBytes();
-
-        // BenObject ben = BenObject.getBenObject(new ByteArrayInputStream(bytes));
-
-        // ben.print(0); 
     }
     
     public static void main(String[] args)
@@ -52,13 +70,24 @@ public class Dorrent extends JFrame implements ActionListener
     @Override
     public void actionPerformed(ActionEvent e) 
     {
+        
         try
         {
-            if(e.getSource() == okButton)
+            if(e.getSource() == openFileMenuItem)
             {
-                byte[] bytes = textField.getText().getBytes();
-                BenObject bo = BenObject.getBenObject(new ByteArrayInputStream(bytes));
-                bo.print(0);
+                
+                JFileChooser chooser = new JFileChooser();
+                FileNameExtensionFilter filter = new FileNameExtensionFilter("BitTorrent files", "torrent");
+                chooser.setFileFilter(filter);
+                int returnVal = chooser.showOpenDialog(this);
+                if (returnVal != JFileChooser.APPROVE_OPTION) 
+                    return;
+                
+                BenObject benObj = BenObject.getBenObject(new FileInputStream(chooser.getSelectedFile().getPath()));
+                benObj.print(0);
+                MetaInfo metaInfo = new MetaInfo((BenDictionary)benObj);
+                
+                JOptionPane.showMessageDialog(this, metaInfo.toString());  
             }
         
         }
@@ -68,7 +97,8 @@ public class Dorrent extends JFrame implements ActionListener
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             ex.printStackTrace(pw);
-            JOptionPane.showMessageDialog(this, sw.toString()); // stack trace as a string
+//            JOptionPane.showMessageDialog(rootPane, menuBar, null, WIDTH, null);
+            JOptionPane.showMessageDialog(this, sw.toString(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 }
